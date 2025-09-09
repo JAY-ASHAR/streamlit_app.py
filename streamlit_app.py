@@ -365,102 +365,43 @@ def analytics_dashboard():
                                       .head(10)
                                       .reset_index(drop=True))
 
+        # ----- Display Leaderboards -----
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("**Top Performers (by Attendance Rate)**")
-            show_cols = ["name", "attendance_rate", "P", "A", "days_covered", "total_sessions"]
             tmp = top_performers.copy()
             tmp["attendance_rate"] = (tmp["attendance_rate"] * 100).round(2).astype(float)
-            st.dataframe(tmp.rename(columns={"attendance_rate": "Attendance %"})[show_cols], use_container_width=True)
+            tmp = tmp.rename(columns={"attendance_rate": "Attendance %"})
+            show_cols = ["name", "Attendance %", "P", "A", "days_covered", "total_sessions"]
+            st.dataframe(tmp[show_cols], use_container_width=True)
+
         with col2:
             st.markdown("**Top Absentees (by Total A)**")
-            show_cols = ["name", "A", "P", "days_covered", "attendance_rate"]
             tmp = top_absentees.copy()
             tmp["attendance_rate"] = (tmp["attendance_rate"] * 100).round(2).astype(float)
-            st.dataframe(tmp.rename(columns={"attendance_rate": "Attendance %"})[show_cols], use_container_width=True)
+            tmp = tmp.rename(columns={"attendance_rate": "Attendance %"})
+            show_cols = ["name", "A", "P", "days_covered", "Attendance %"]
+            st.dataframe(tmp[show_cols], use_container_width=True)
 
         col3, col4 = st.columns(2)
         with col3:
             st.markdown("**Most Consistent (lowest day-to-day variation)**")
-            show_cols = ["name", "daily_consistency_std", "attendance_rate", "days_covered", "total_sessions"]
             tmp = consistent.copy()
             tmp["attendance_rate"] = (tmp["attendance_rate"] * 100).round(2).astype(float)
             tmp["daily_consistency_std"] = tmp["daily_consistency_std"].round(3)
-            st.dataframe(tmp.rename(columns={"attendance_rate": "Attendance %", "daily_consistency_std": "Consistency Std"})[show_cols], use_container_width=True)
+            tmp = tmp.rename(columns={"attendance_rate": "Attendance %", "daily_consistency_std": "Consistency Std"})
+            show_cols = ["name", "Consistency Std", "Attendance %", "days_covered", "total_sessions"]
+            st.dataframe(tmp[show_cols], use_container_width=True)
+
         with col4:
             st.markdown("**Lowest Attendance (by Attendance Rate)**")
-            show_cols = ["name", "attendance_rate", "P", "A", "days_covered", "total_sessions"]
             tmp = lowest_attendance.copy()
             tmp["attendance_rate"] = (tmp["attendance_rate"] * 100).round(2).astype(float)
-            st.dataframe(tmp.rename(columns={"attendance_rate": "Attendance %"})[show_cols], use_container_width=True)
+            tmp = tmp.rename(columns={"attendance_rate": "Attendance %"})
+            show_cols = ["name", "Attendance %", "P", "A", "days_covered", "total_sessions"]
+            st.dataframe(tmp[show_cols], use_container_width=True)
 
     st.caption("Notes: Attendance % = P / total sessions. Consistency uses std dev of daily present ratio (0, 0.5, 1.0).")
-
-
-def student_profiles():
-    st.header("👤 Student Profiles (Admin Only)")
-    df_students = pd.read_csv(STUDENTS_CSV)
-    if df_students.empty:
-        st.info("No students available.")
-        return
-    student = st.selectbox("Select Student", df_students["name"].tolist())
-    files = sorted([f for f in os.listdir(ATTENDANCE_DIR) if f.endswith(".csv")])
-    history = []
-    for f in files:
-        df = pd.read_csv(os.path.join(ATTENDANCE_DIR, f))
-        row = df[df["name"] == student]
-        if not row.empty:
-            r = row.copy()
-            r["date"] = f.replace(".csv", "")
-            history.append(r[["date", "Morning", "Night"]])
-    if not history:
-        st.warning("No attendance history found for this student.")
-        return
-    df_history = pd.concat(history, ignore_index=True).sort_values("date")
-    st.dataframe(df_history, use_container_width=True)
-
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        df_history.to_excel(writer, index=False, sheet_name="History")
-    output.seek(0)
-    st.download_button(
-        label="Download Student History (Excel)",
-        data=output,
-        file_name=f"{student}_history.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
-
-
-def monthly_summary():
-    st.header("📆 Monthly Attendance Summary (Admin Only)")
-    files = sorted([f for f in os.listdir(ATTENDANCE_DIR) if f.endswith(".csv")])
-    if not files:
-        st.info("No attendance files present.")
-        return
-    months = sorted({f[:7] for f in files})  # YYYY-MM
-    month = st.selectbox("Select Month (YYYY-MM)", months)
-    files_month = [f for f in files if f.startswith(month)]
-    if not files_month:
-        st.warning("No data found for this month.")
-        return
-    all_data = []
-    for f in files_month:
-        df = pd.read_csv(os.path.join(ATTENDANCE_DIR, f))
-        df["date"] = f.replace(".csv", "")
-        all_data.append(df)
-    df_month = pd.concat(all_data, ignore_index=True)
-    st.dataframe(df_month[["date", "name", "Morning", "Night"]], use_container_width=True)
-
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        df_month.to_excel(writer, index=False, sheet_name=f"{month}_summary")
-    output.seek(0)
-    st.download_button(
-        label=f"Download {month} Summary (Excel)",
-        data=output,
-        file_name=f"attendance_summary_{month}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
 
 # ========== UI PAGES ==========
 def login_ui():
@@ -484,7 +425,7 @@ def nav_sidebar():
     st.sidebar.write(f"👤 Logged in as: **{user['name']}** ({user['role']})")
     options = ["Take Attendance", "Generate Report"]
     if user["role"] == "admin":
-        options += ["Manage Students", "Clear Data", "Analytics Dashboard", "Student Profiles", "Monthly Summary"]
+        options += ["Manage Students", "Clear Data", "Analytics Dashboard", "Student Profiles"]
     choice = st.sidebar.radio("Go to", options, index=0)
     st.sidebar.divider()
     if st.sidebar.button("Logout"):
@@ -670,6 +611,81 @@ def clear_data_page():
         st.success(f"All data for {day_str} has been cleared.")
         st.rerun()
 
+
+# ========== STUDENT PROFILES ==========
+def student_profiles():
+    st.header("👤 Student Profiles")
+
+    # Load students
+    df_students = load_students()
+    if df_students.empty:
+        st.info("No students available.")
+        return
+
+    # Select student
+    student_list = df_students["name"].tolist()
+    selected_student = st.selectbox("Select Student", student_list)
+
+    # Load all attendance (long format)
+    df_long = load_all_attendance_long()
+    if df_long.empty:
+        st.warning("No attendance data available yet.")
+        return
+
+    # Filter for selected student
+    df_individual = df_long[df_long["name"] == selected_student].copy()
+    df_individual = df_individual.sort_values(["date_dt", "session"])
+
+    # Pivot so Morning & Night are in separate columns
+    df_pivot = df_individual.pivot_table(
+        index="date", columns="session", values="status", aggfunc="first"
+    ).reset_index()
+
+    # Ensure both Morning & Night columns exist
+    for col in SESSIONS:
+        if col not in df_pivot.columns:
+            df_pivot[col] = ""
+
+    # Show in Streamlit
+    st.subheader(f"📅 Attendance History — {selected_student}")
+    st.dataframe(df_pivot[["date", "Morning", "Night"]], use_container_width=True)
+
+    # Prepare Excel file with colors
+    if not df_pivot.empty:
+        from io import BytesIO
+        from openpyxl.styles import PatternFill
+
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df_pivot[["date", "Morning", "Night"]].to_excel(
+                writer, sheet_name="Attendance", index=False
+            )
+
+            # Access the sheet
+            worksheet = writer.sheets["Attendance"]
+
+            # Define fills
+            green_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
+            red_fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+
+            # Loop through cells and apply colors
+            for row in worksheet.iter_rows(min_row=2, min_col=2, max_col=3):
+                for cell in row:
+                    if cell.value in ["P", "L", "S", "SCH/CLG", "OI"]:
+                        cell.fill = green_fill
+                    elif cell.value == "A":
+                        cell.fill = red_fill
+
+        output.seek(0)
+
+        # Download button
+        st.download_button(
+            label=f"Download {selected_student}'s Report (Excel)",
+            data=output,
+            file_name=f"{selected_student.replace(' ', '_')}_attendance.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
 # ========== MAIN ==========
 def main():
     st.set_page_config(page_title=APP_TITLE, page_icon="🏠", layout="wide")
@@ -705,12 +721,7 @@ def main():
             st.error("Access denied.")
             return
         student_profiles()
-    elif choice == "Monthly Summary":
-        if st.session_state["user"]["role"] != "admin":
-            st.error("Access denied.")
-            return
-        monthly_summary()
-
 
 if __name__ == "__main__":
     main()
+
