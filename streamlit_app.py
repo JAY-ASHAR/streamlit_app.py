@@ -1,3 +1,19 @@
+# streamlit_app.py
+# ---------------------------------
+# Hostel Attendance Tracker with:
+# - Admin & Operator login
+# - Morning/Night attendance lock
+# - Date-wise Excel report with totals
+# - Admin-only student management
+# - Admin-only Clear Data by Date
+# - Dashboard-style totals on Generate Report
+# - Edit after lock (Admin)
+# - Analytics Dashboard (Bar Chart + Leaderboards)
+# - Student Profiles with Excel export
+# - Monthly Summary with Excel export
+# - NEW: Leaderboards (Top Performers, Absentees, Consistency, Lowest Attendance)
+# - NEW: Interactive Month + Student filters inside Analytics Dashboard
+# ---------------------------------
 
 import os
 import json
@@ -708,3 +724,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
