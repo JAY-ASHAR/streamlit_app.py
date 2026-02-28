@@ -5,7 +5,7 @@ Hostel Attendance Tracker is a mobile-friendly online system developed to manage
 The system replaces paper-based registers and allows attendance to be marked digitally, with automatic report generation and clear attendance insights.
 
 **Live Application:**  
-https://hostel-attendance-tracker-fxze4fcpsrxrmazsykcdfm.streamlit.app/
+[https://hostel-attendance-tracker-fxze4fcpsrxrmazsykcdfm.streamlit.app/](https://hostel-attendence-tracker.streamlit.app/)
 
 ---
 
